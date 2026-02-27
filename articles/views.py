@@ -1,12 +1,12 @@
 from .serializers import CategorySerializer, ArticleReadSerializer, ArticleWriteSerializer
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from .models import Article, Category
 from .permissions import IsAuthorOrReadOnly
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import RetrieveAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, ListCreateAPIView
 from django.db.models import F
 from django.core.cache import cache
+from rest_framework.response import Response
 # Create your views here.
 
 

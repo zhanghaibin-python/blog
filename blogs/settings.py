@@ -145,7 +145,14 @@ MEDIA_URL = "/media/"
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    # 注册自定义渲染器
+    'DEFAULT_RENDERER_CLASSES': (
+        'util.renderers.CustomJSONRenderer',  # 你的自定义 Renderer
+        'rest_framework.renderers.BrowsableAPIRenderer', # 保留 API 页面
+    ),
+    # 注册自定义异常处理
+    'EXCEPTION_HANDLER': 'util.exceptions.custom_exception_handler',
 }
 
 # 配置 JWT 过期时间
@@ -158,7 +165,6 @@ SIMPLE_JWT = {
 
 
 # 配置 redis
-
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -168,3 +174,6 @@ CACHES = {
         }
     }
 }
+
+
+

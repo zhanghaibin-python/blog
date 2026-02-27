@@ -1,12 +1,12 @@
 from rest_framework.views import APIView
 from .serializers import RegisterSerializer, LoginSerializer
 from rest_framework.response import Response
-from util.response import success, error
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # Create your views here.
+
 
 class RegisterAPIView(APIView):
     """
@@ -20,7 +20,7 @@ class RegisterAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         serializer.save()
-        return success(serializer.data)
+        return Response(data=serializer.data)
 
 
 class LoginAPIView(APIView):
@@ -30,7 +30,7 @@ class LoginAPIView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
-            return error(serializer.data)
+            return Response(data=serializer.data)
 
 
         username = serializer.validated_data['username']
