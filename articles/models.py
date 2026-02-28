@@ -65,6 +65,16 @@ class Article(models.Model):
         ordering = ['-created_at']
         verbose_name = "文章"
         verbose_name_plural = "文章"
+        # 新增联合索引
+        indexes = [
+            # 针对最常用的 "查询已发布文章并按时间倒序"场景
+            models.Index(fields=['status',
+                                 '-created_at']),
+            # 针对分类查询
+            models.Index(fields=[
+                'category', 'status'
+            ])
+        ]
 
 
     def __str__(self):

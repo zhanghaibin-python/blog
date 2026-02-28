@@ -1,12 +1,12 @@
 from .serializers import CategorySerializer, ArticleReadSerializer, ArticleWriteSerializer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from .models import Article, Category
 from .permissions import IsAuthorOrReadOnly
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.generics import RetrieveAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, ListCreateAPIView
-from django.db.models import F
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListAPIView, ListCreateAPIView
 from django.core.cache import cache
 from rest_framework.response import Response
+from django_redis import get_redis_connection
 # Create your views here.
 
 
@@ -52,7 +52,10 @@ class ArticleDetailUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     """
     # 加上 select_related('author')，一次查询搞定对象获取和权限校验
     queryset = Article.objects.select_related('author').all()
-    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
+    # 组合权限：
+    # 1. IsAuthenticatedOrReadOnly: 未登录只能 GET，登录了才能 PUT/DELETE
+    # 2. IsAuthorOrReadOnly: 即使登录了，也必须是作者本人才能改
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
 
     def get_serializer_class(self):
         """
@@ -65,14 +68,14 @@ class ArticleDetailUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     # ====== 详情读取（缓存 + 阅读量）======
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-
-        # 使用 F 表达式直接更新数据库，不经过 Python 内存对象，原子操作
-        # 注意：因为频繁更新数据库会影响性能，高并发下通常先写 Redis 计数，在定时同步到 MySQL
-        instance.views = F('views') + 1
-        instance.save(update_fields=['views'])
-        # 刷新实例以获取最新 views 值（因为 F 表达式执行后 instance 内存值未变）
-        instance.refresh_from_db()
-
+        redis_conn = get_redis_connection('default')
+        redis_key = f"article:views:{instance.id}"
+        # 只对 redis 做自增, 同时获取自增后的新值
+        incr = redis_conn.incr(redis_key)
+        # 设置过期时间
+        redis_conn.expire(redis_key, 60 * 60 * 24)
+        # 计算真实阅读量（数据库值 + Redis 增量）
+        real_views = instance.views + incr
         # 定义缓存 Key, 例如：article_detail_12
         cache_key = f'article_detail_{instance.id}'
         # 尝试从缓存获取数据
@@ -84,11 +87,9 @@ class ArticleDetailUpdateDestroyView(RetrieveUpdateDestroyAPIView):
             data = serializer.data
             # 设置过期时间 60 * 15 秒（15分钟），防止缓存雪崩
             cache.set(cache_key, data, 60 * 15)
-        else:
-            # 缓存命中：直接使用，但由于我们刚更新了 views，需要手动更新缓存中得 views 字段
-            # 这是一个权衡：为了性能，我们可以允许缓存中的 views 稍微滞后， 或者手动 patch 一下
-            data['views'] = instance.views
 
+        response_data = data.copy()
+        response_data['views'] = real_views
         return Response(data)
 
 

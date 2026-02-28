@@ -25,6 +25,33 @@ python manage.py runserver
 必须先安装: pip install django-redis
 
 
+# 7. 配置 redis 缓存 + 配置 celery 异步任务队列 + 配置 django-celery-beat 定时任务队列
+
+## 7.1 配置 redis 缓存
+在 settings.py 中添加如下配置：
+```python
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',  # 1 表示使用 Redis 的数据库 1
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+```
+
+## 7.2 配置 celery 异步任务队列
+在 settings.py 中添加如下配置：
+```python
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/2'  # 使用 Redis 数据库 2 作为消息队列
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/3'  # 使用 Redis 数据库 3 存储任务结果
+```
+windows 下 启动 celery 异步任务队列：
+celery -A blogs worker -l info -P eventlet
+
+
+
 # 二、前端环境搭建
 
 

@@ -168,7 +168,7 @@ SIMPLE_JWT = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1", # 简历中写了 Redis，这里必须有
+        "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
@@ -176,4 +176,13 @@ CACHES = {
 }
 
 
+# Celery 配置
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/2'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/3'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+# 显示关闭 UTC 时区
+CELERY_ENABLE_UTC = False
+CELERY_TIMEZONE = TIME_ZONE
 
