@@ -24,16 +24,26 @@
         "password": "your_password"
     }
     ```
-*   **Response (201 Created)**:
-    ```json
-    {
-        "message": "注册成功"
-    }
+  *   **Response (201 Created)**:
+      ```json
+      {
+      "code": 200,
+      "msg": "success",
+      "data": {
+          "username": "your_username"
+      }
+}
     ```
 *   **Response (400 Bad Request)**:
     ```json
     {
-        "username": ["用户名已存在! "]
+      "code": 400,
+      "msg": "error",
+      "data": {
+        "username": [
+            "已存在一位使用该名字的用户。"
+        ]
+    }
     }
     ```
 
@@ -51,9 +61,13 @@
 *   **Response (200 OK)**:
     ```json
     {
-        "message": "登录成功! ",
-        "refresh": "eyJ0eXAiOiJKV1QiLCJhbG...",
-        "access": "eyJ0eXAiOiJKV1QiLCJhbG..."
+        "code": 200,
+        "msg": "success",
+        "data": {
+            "message": "登录成功! ",
+            "refresh": "eyJ0eXAiOiJKV1QiLCJhbG...",
+            "access": "eyJ0eXAiOiJKV1QiLCJhbG..."
+        }
     }
     ```
 
@@ -65,24 +79,42 @@
 *   **Response (200 OK)**:
     ```json
     {
-        "username": "current_username"
+        "code": 200,
+        "msg": "success",
+        "data": {
+            "username": "testuser"
+        }
     }
     ```
 *   **Response (401 Unauthorized)**:
     ```json
     {
-        "message": "用户未登录! "
+       "code": 401,
+       "msg": "error",
+       "data": {
+          "message": "用户未登录! "
+        }
     }
     ```
 
 ### 1.4 退出登录 (Logout)
 *   **URL**: `/auth/logout/`
 *   **Method**: `POST`
-*   **Permission**: AllowAny (虽然通常需要登录，但代码未强制)
+*   **Permission**: AllowAny
+*   **Request Body**:
+    ```json
+    {
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbG..."
+    }
+    ```
 *   **Response (200 OK)**:
     ```json
     {
-        "message": "已退出登录! "
+        "code": 200,
+        "msg": "success",
+        "data": {
+            "detail": "Successfully logged out."
+        }
     }
     ```
 
@@ -93,19 +125,21 @@
 ### 2.1 获取文章列表 (List Articles)
 *   **URL**: `/articles/`
 *   **Method**: `GET`
-*   **Permission**: IsAuthenticated (需要登录 - *注意：代码中限制了必须登录才能查看列表*)
+*   **Permission**: IsAuthenticatedOrReadOnly (get请求可直接放行) 
 *   **Headers**: `Authorization: Bearer <token>`
 *   **Query Parameters**: 无
 *   **Response (200 OK)**:
     ```json
-    [
-        {
-            "title": "文章标题",
-            "category": "分类名称",
-            "tags": "标签名称"
-        },
-//        ...
-    ]
+    {
+        "code": 200,
+        "msg": "success",
+        "data": {
+            "count": 0,
+            "next": null,
+            "previous": null,
+            "results": []
+        }
+    }
     ```
 
 ### 2.2 创建文章 (Create Article)
@@ -117,52 +151,76 @@
     *注意：当前实现仅支持设置标题，分类和标签为只读。*
     ```json
     {
-        "title": "新文章标题"
+        "title": "Django 入门教程",
+        "content": "本文介绍 Django 的基本安装和第一个项目创建方法。",
+        "category": 1,   
+        "tags": [],
+         "status": "draft"
     }
     ```
 *   **Response (201 Created)**:
     ```json
     {
-        "id": 1,
-        "message": "文章创建成功"
+        "code": 200,
+        "msg": "success",
+        "data": {
+            "title": "Django 入门教程",
+            "category": 1,
+            "tags": [],
+            "content": "本文介绍 Django 的基本安装和第一个项目创建方法。",
+            "status": "draft"
+        }
     }
     ```
 
 ### 2.3 获取文章详情 (Retrieve Article)
 *   **URL**: `/articles/<int:pk>/`
 *   **Method**: `GET`
-*   **Permission**: AllowAny (公开访问)
+*   **Permission**: IsAuthenticatedOrReadOnly (未登录时只能进行get操作)
 *   **Response (200 OK)**:
     ```json
     {
-        "id": 1,
-        "author": "author_username",
-        "category": "category_name",
-        "title": "文章标题",
-        "content": "文章内容...",
-        "status": "published",
-        "views": 123,
-        "created_at": "2023-01-01T12:00:00Z",
-        "updated_at": "2023-01-02T12:00:00Z",
-        "tags": [ 
-//    ...
-     ]
+        "code": 200,
+        "msg": "success",
+        "data": {
+            "id": 1,
+            "title": "Django 入门教程",
+            "category": {
+                "id": 1,
+                "name": "Django"
+            },
+         "tags": [],
+         "views": 0,
+         "created_at": "2026-03-01T09:41:45.897463+08:00"
+        }
     }
     ```
 
 ### 2.4 更新文章 (Update Article)
 *   **URL**: `/articles/<int:pk>/update/`
-*   **Method**: `PATCH`
-*   **Permission**: IsAuthenticated (且必须是作者本人)
+*   **Method**: `PATCH`/ `PUT`
+*   **Permission**: IsAuthorOrReadOnly (登录且必须是作者本人)
 *   **Headers**: `Authorization: Bearer <token>`
 *   **Request Body** (可更新字段):
     ```json
     {
-        "title": "更新后的标题",
-        "content": "更新后的内容"
+        "title": "Django基础教程"
+     }
+    ```
+*   **Response (200 OK)**: 
+    ```json
+    {
+        "code": 200,
+        "msg": "success",
+        "data": {
+            "title": "Django基础教程",
+            "category": 1,
+            "tags": [],
+            "content": "本文介绍 Django 的基本安装和第一个项目创建方法。",
+            "status": "draft"
+        }
     }
     ```
-*   **Response (200 OK)**: 返回更新后的文章详情。
 
 ---
 
@@ -174,14 +232,14 @@
 *   **Permission**: AllowAny
 *   **Response (200 OK)**:
     ```json
-    [
-        {
-            "id": 1,
-            "name": "Python"
-        },
-        {
-            "id": 2,
-            "name": "Django"
-        }
-    ]
+    {
+      "code": 200,
+      "msg": "success",
+      "data": [
+          {
+              "id": 1,
+              "name": "Django"
+          }
+      ]
+    }
     ```
