@@ -24,7 +24,6 @@ class ArticleListCreateAPIView(ListCreateAPIView):
      继承 ListCreateAPIView 自动处理
      get(list) 和 post(create)
      """
-     permission_classes = [IsAuthenticated]
      # 显示挂载分页器
      pagination_class = StandardResultsSetPagination
 

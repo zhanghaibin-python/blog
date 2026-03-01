@@ -4,6 +4,6 @@ from .views import ArticleListCreateAPIView, ArticleDetailUpdateDestroyView, Cat
 
 urlpatterns = [
     path('articles/', ArticleListCreateAPIView.as_view(), name="articles"),
-    path('articles/<int:pk>/', ArticleDetailUpdateDestroyView.as_view()),
+    path('articles/<int:pk>/', ArticleDetailUpdateDestroyView.as_view(), name="article_detail"),
     path('category/', CategoryListAPIView.as_view(), name="category_list"),
 ]
