@@ -152,7 +152,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer', # 保留 API 页面
     ),
     # 注册自定义异常处理
-    'EXCEPTION_HANDLER': 'util.exceptions.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'utils.exceptions.custom_exception_handler',
 }
 
 # 配置 JWT 过期时间

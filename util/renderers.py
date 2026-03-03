@@ -3,7 +3,7 @@ from rest_framework.renderers import JSONRenderer
 只需在settings.py 中注册：
 # 注册自定义渲染器
     'DEFAULT_RENDERER_CLASSES': (
-        'util.renderers.CustomJSONRenderer',  # 你的自定义 Renderer
+        'utils.renderers.CustomJSONRenderer',  # 你的自定义 Renderer
         'rest_framework.renderers.BrowsableAPIRenderer', # 保留 API 页面
     ),
 """

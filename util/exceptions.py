@@ -1,11 +1,11 @@
-# util/exceptions.py
+# utils/exceptions.py
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 
 """
 在settings.py中：
 # 注册自定义异常处理
-    'EXCEPTION_HANDLER': 'util.exceptions.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'utils.exceptions.custom_exception_handler',
 """
 
 
