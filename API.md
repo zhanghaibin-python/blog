@@ -197,7 +197,7 @@
     ```
 
 ### 2.4 更新文章 (Update Article)
-*   **URL**: `/articles/<int:pk>/update/`
+*   **URL**: `/articles/<int:pk>/`
 *   **Method**: `PATCH`/ `PUT`
 *   **Permission**: IsAuthorOrReadOnly (登录且必须是作者本人)
 *   **Headers**: `Authorization: Bearer <token>`

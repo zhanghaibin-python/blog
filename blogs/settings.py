@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist', # 新增黑名单应用
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -185,4 +187,12 @@ CELERY_RESULT_SERIALIZER = 'json'
 # 显示关闭 UTC 时区
 CELERY_ENABLE_UTC = False
 CELERY_TIMEZONE = TIME_ZONE
+
+
+
+# 开发环境建议允许所有来源
+CORS_ALLOW_ALL_ORIGINS = True
+
+# 如果需要允许携带认证信息（如token），可加：
+CORS_ALLOW_CREDENTIALS = True
 
