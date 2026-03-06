@@ -63,6 +63,24 @@ class ArticleDetailUpdateDestroyView(RetrieveUpdateDestroyAPIView):
         if self.request.method in ['PUT', 'PATCH']:
             return ArticleWriteSerializer
         return ArticleReadSerializer
+    
+    def perform_update(self, serializer):
+        """
+        更新时清除缓存
+        """
+        instance = self.get_object()
+        cache_key = f'article_detail_{instance.id}'
+        cache.delete(cache_key)
+        return super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        """
+        删除时清除缓存
+        """
+        instance = self.get_object()
+        cache_key = f'article_detail_{instance.id}'
+        cache.delete(cache_key)
+        return super().perform_destroy(instance)
 
     # ====== 详情读取（缓存 + 阅读量）======
     def retrieve(self, request, *args, **kwargs):

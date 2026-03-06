@@ -150,7 +150,7 @@ REST_FRAMEWORK = {
     ),
     # 注册自定义渲染器
     'DEFAULT_RENDERER_CLASSES': (
-        'util.renderers.CustomJSONRenderer',  # 你的自定义 Renderer
+        'utils.renderers.CustomJSONRenderer',  # 你的自定义 Renderer
         'rest_framework.renderers.BrowsableAPIRenderer', # 保留 API 页面
     ),
     # 注册自定义异常处理

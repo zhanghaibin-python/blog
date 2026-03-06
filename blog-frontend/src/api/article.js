@@ -13,7 +13,8 @@ export function getArticles(params) {
 export function getArticle(id) {
   return request({
     url: `/articles/${id}/`,
-    method: 'get'
+    method: 'get',
+    params: { _t: new Date().getTime() } // 添加时间戳参数，强制浏览器不使用缓存
   })
 }
 

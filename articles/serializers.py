@@ -24,6 +24,7 @@ class ArticleReadSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'category',
+            'content',
             'tags',
             'views',
             'created_at'
