@@ -17,6 +17,8 @@ class ArticleReadSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     # 将关联得标签 tags 改为字符串列表
     tags = serializers.StringRelatedField(many=True)
+    # 增加作者信息
+    author = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -27,8 +29,17 @@ class ArticleReadSerializer(serializers.ModelSerializer):
             'content',
             'tags',
             'views',
-            'created_at'
+            'created_at',
+            'author'
         ]
+
+    def get_author(self, obj):
+        if obj.author:
+            return {
+                'id': obj.author.id,
+                'username': obj.author.username
+            }
+        return None
 
 
 
@@ -45,10 +56,3 @@ class ArticleWriteSerializer(serializers.ModelSerializer):
             'content',
             'status'
                   ]
-
-
-
-
-
-
-

@@ -188,11 +188,22 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ENABLE_UTC = False
 CELERY_TIMEZONE = TIME_ZONE
 
+# Celery Beat 定时任务配置
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    # 定义一个定时任务，每分钟执行一次，调用 sync_article_views 任务（键名随意）
+    'sync-article-views-every-minute': {
+        'task': 'articles.tasks.sync_article_views',  # 任务路径
+        'schedule': crontab(minute='*/1'),  # 每分钟执行一次
+    }
+}
 
 
-# 开发环境建议允许所有来源
+
+# 开发环境: 允许所有来源
 CORS_ALLOW_ALL_ORIGINS = True
 
-# 如果需要允许携带认证信息（如token），可加：
+# 允许携带认证信息（如token)
 CORS_ALLOW_CREDENTIALS = True
 

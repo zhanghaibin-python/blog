@@ -16,6 +16,9 @@
            <span class="meta-item" v-if="article.category">
              <el-tag size="small">{{ article.category.name }}</el-tag>
            </span>
+           <span class="meta-item" v-if="article.author">
+             作者: {{ article.author.username }}
+           </span>
         </div>
       </div>
       
@@ -26,7 +29,7 @@
         <div style="white-space: pre-wrap;">{{ article.content }}</div>
       </div>
       
-      <div class="article-actions" v-if="authStore.isAuthenticated">
+      <div class="article-actions" v-if="canEdit">
           <el-button type="primary" :icon="Edit" @click="$router.push(`/articles/${article.id}/edit`)">编辑文章</el-button>
       </div>
     </div>
@@ -35,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getArticle } from '@/api/article'
 import { useAuthStore } from '@/stores/auth'
@@ -46,6 +49,14 @@ const authStore = useAuthStore()
 
 const article = ref(null)
 const loading = ref(false)
+
+const canEdit = computed(() => {
+  return authStore.isAuthenticated && 
+         authStore.user && 
+         article.value && 
+         article.value.author && 
+         authStore.user.username === article.value.author.username
+})
 
 const fetchArticle = async () => {
   loading.value = true

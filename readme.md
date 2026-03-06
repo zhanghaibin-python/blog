@@ -60,11 +60,12 @@ python manage.py runserver
 #### 7.2 启动 Celery Worker (异步任务)
 用于处理阅读量异步落库等后台任务。
 ```bash
-# Windows (必须加 -P eventlet)
-celery -A blogs worker -l info -P eventlet
+# Windows (必须加 -P eventlet) 
+# 先执行
+celery -A blogs worker -l info -P eventlet  # 添加一个工人负责执行redis中的任务
+# 在执行
+celery -A blogs beat -l info    # 启动模式：发送一个指令告诉 worker 该干活了
 
-# Linux/Mac
-celery -A blogs worker -l info
 ```
 
 #### 7.3 启动 Celery Beat (定时任务)
