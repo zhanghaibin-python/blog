@@ -21,17 +21,25 @@ def sync_article_views():
             # Redis 返回的是 bytes， 需要 decode
             key_str = key.decode()
             incr = redis_conn.get(key)
+            
             if not incr:
                 continue
+                
             incr = int(incr)
+            if incr <= 0:
+                continue
+
             # 解析 article_id
             article_id = int(key_str.split(":")[-1])
+            
             # 原子更新数据库
             Article.objects.filter(id=article_id).update(
                 views=F("views") + incr
             )
-            # 进行原子操作，删除key
-            redis_conn.getset(key, 0)
+            
+            # 重点优化：使用 decrby 扣减已同步的数量，而不是直接置 0
+            # 这样如果在同步期间有新的阅读量产生（比如变成 15），这里只减去 10，剩下的 5 下次同步
+            redis_conn.decrby(key, incr)
 
             synced_count += 1
 
