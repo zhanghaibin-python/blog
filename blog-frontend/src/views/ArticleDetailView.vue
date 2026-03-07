@@ -25,8 +25,7 @@
       <el-divider />
       
       <div class="article-content">
-        <!-- 如果内容是 markdown，可以使用 markdown-it 等库渲染，这里直接显示文本 -->
-        <div style="white-space: pre-wrap;">{{ article.content }}</div>
+        <MdPreview :editorId="id" :modelValue="article.content" />
       </div>
       
       <div class="article-actions" v-if="canEdit">
@@ -43,9 +42,12 @@ import { useRoute } from 'vue-router'
 import { getArticle } from '@/api/article'
 import { useAuthStore } from '@/stores/auth'
 import { Calendar, View, Edit } from '@element-plus/icons-vue'
+import { MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
 
 const route = useRoute()
 const authStore = useAuthStore()
+const id = 'preview-only'
 
 const article = ref(null)
 const loading = ref(false)

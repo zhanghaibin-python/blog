@@ -16,7 +16,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="内容" prop="content">
-          <el-input v-model="form.content" type="textarea" :rows="15" placeholder="请输入文章内容" />
+          <MdEditor v-model="form.content" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSubmit('published')" :loading="submitting">发布</el-button>
@@ -34,6 +34,8 @@ import { useRouter } from 'vue-router'
 import { createArticle } from '@/api/article'
 import { getCategories } from '@/api/category'
 import { ElMessage } from 'element-plus'
+import { MdEditor } from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
 
 const router = useRouter()
 const formRef = ref(null)
