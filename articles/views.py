@@ -7,6 +7,9 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListAPIView, L
 from django.core.cache import cache
 from rest_framework.response import Response
 from django_redis import get_redis_connection
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
+from .filters import ArticleFilter
 # Create your views here.
 
 
@@ -28,8 +31,20 @@ class ArticleListCreateAPIView(ListCreateAPIView):
      pagination_class = StandardResultsSetPagination
 
      def get_queryset(self):
-         # 保持你原有得查询优化
-         return Article.objects.filter(status="published").select_related("author", "category").prefetch_related("tags")
+         # 基础查询优化
+         queryset = Article.objects.select_related("author", "category").prefetch_related("tags").all() 
+         # 获取查询参数中的 status
+         status = self.request.query_params.get('status')
+         # 如果为 draft, 则指返回对应作者的草稿文章
+         if status == 'draft':
+            # 只有登录用户才能看到草稿且只能看自己的草稿
+            if self.request.user.is_authenticated:
+                return Article.objects.filter(status="draft", author=self.request.user).select_related("author", "category").prefetch_related("tags")
+            else:
+                return Article.objects.none()  # 未登录用户看不到任何草稿
+         # 其他情况只返回已发布的文章
+         return queryset.filter(status="published")
+                
 
      def get_serializer_class(self):
          # 动态选择序列器
@@ -40,6 +55,10 @@ class ArticleListCreateAPIView(ListCreateAPIView):
      def perform_create(self, serializer):
          # 自关联当前用户
          serializer.save(author=self.request.user)
+
+     filter_backends = [DjangoFilterBackend, OrderingFilter]
+     filterset_class = ArticleFilter 
+     ordering_fields = ['views', 'created_at']    # 允许用户按阅读量或时间排序
 
 
 class ArticleDetailUpdateDestroyView(RetrieveUpdateDestroyAPIView):

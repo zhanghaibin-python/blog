@@ -19,7 +19,8 @@
           <el-input v-model="form.content" type="textarea" :rows="15" placeholder="请输入文章内容" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSubmit" :loading="submitting">更新</el-button>
+          <el-button type="primary" @click="handleSubmit('published')" :loading="submitting">发布</el-button>
+          <el-button type="info" @click="handleSubmit('draft')" :loading="submitting">存为草稿</el-button>
           <el-button @click="$router.back()">取消</el-button>
         </el-form-item>
       </el-form>
@@ -78,7 +79,7 @@ const fetchArticle = async () => {
   }
 }
 
-const handleSubmit = async () => {
+const handleSubmit = async (status) => {
   if (!formRef.value) return
   
   await formRef.value.validate(async (valid) => {
@@ -86,9 +87,10 @@ const handleSubmit = async () => {
       submitting.value = true
       try {
         const id = route.params.id
+        form.status = status // 确保更新状态
         await updateArticle(id, form)
-        ElMessage.success('更新成功')
-        router.push(`/articles/${id}`)
+        ElMessage.success(status === 'published' ? '发布成功' : '已存为草稿')
+        router.push(status === 'published' ? `/articles/${id}` : '/drafts')
       } catch (error) {
         console.error(error)
       } finally {

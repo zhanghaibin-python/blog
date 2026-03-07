@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist', # 新增黑名单应用
+    'django_filters',
     "users.apps.UsersConfig",
     "articles.apps.ArticlesConfig",
 ]
@@ -155,6 +156,8 @@ REST_FRAMEWORK = {
     ),
     # 注册自定义异常处理
     'EXCEPTION_HANDLER': 'utils.exceptions.custom_exception_handler',
+    # 配置过滤器
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend', )
 }
 
 # 配置 JWT 过期时间

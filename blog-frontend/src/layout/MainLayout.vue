@@ -37,6 +37,10 @@
                 <el-icon><EditPen /></el-icon>
                 <span>写文章</span>
             </el-menu-item>
+            <el-menu-item index="/drafts">
+                <el-icon><Document /></el-icon>
+                <span>草稿箱</span>
+            </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main class="app-main">
@@ -49,7 +53,7 @@
 <script setup>
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { ArrowDown, HomeFilled, EditPen } from '@element-plus/icons-vue'
+import { ArrowDown, HomeFilled, EditPen, Document } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
 const router = useRouter()

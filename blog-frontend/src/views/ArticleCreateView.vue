@@ -19,7 +19,8 @@
           <el-input v-model="form.content" type="textarea" :rows="15" placeholder="请输入文章内容" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSubmit" :loading="submitting">发布</el-button>
+          <el-button type="primary" @click="handleSubmit('published')" :loading="submitting">发布</el-button>
+          <el-button type="info" @click="handleSubmit('draft')" :loading="submitting">存为草稿</el-button>
           <el-button @click="$router.back()">取消</el-button>
         </el-form-item>
       </el-form>
@@ -61,16 +62,17 @@ const fetchCategories = async () => {
   }
 }
 
-const handleSubmit = async () => {
+const handleSubmit = async (status) => {
   if (!formRef.value) return
   
   await formRef.value.validate(async (valid) => {
     if (valid) {
       submitting.value = true
       try {
+        form.status = status // 设置文章状态
         await createArticle(form)
-        ElMessage.success('发布成功')
-        router.push('/')
+        ElMessage.success(status === 'published' ? '发布成功' : '草稿保存成功')
+        router.push(status === 'published' ? '/' : '/drafts')
       } catch (error) {
         console.error(error)
       } finally {

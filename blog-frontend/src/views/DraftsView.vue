@@ -1,50 +1,38 @@
 <template>
-  <div class="home-container">
-    <div class="search-bar">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="搜索文章标题..."
-        class="input-with-select"
-        @keyup.enter="handleSearch"
-        clearable
-        @clear="handleSearch"
-      >
-        <template #append>
-          <el-button :icon="Search" @click="handleSearch" />
-        </template>
-      </el-input>
-    </div>
-
+  <div class="drafts-container">
+    <h2>我的草稿箱</h2>
+    
     <div v-if="loading" class="loading-container">
       <el-skeleton :rows="5" animated />
     </div>
     <div v-else-if="articles.length === 0" class="empty-container">
-      <el-empty description="暂无文章" />
+      <el-empty description="暂无草稿" />
     </div>
     <div v-else>
       <el-card v-for="article in articles" :key="article.id" class="article-card" shadow="hover">
         <template #header>
           <div class="article-header">
-            <router-link :to="{ name: 'article-detail', params: { id: article.id } }" class="article-title">
-              {{ article.title }}
-            </router-link>
-            <el-tag v-if="article.category" size="small" type="info">
-                {{ typeof article.category === 'object' ? article.category.name : article.category }}
-            </el-tag>
+            <span class="article-title">{{ article.title }}</span>
+            <div class="article-actions">
+              <el-button type="primary" size="small" @click="handleEdit(article.id)">编辑</el-button>
+              <el-button type="success" size="small" @click="handlePublish(article)">发布</el-button>
+              <el-popconfirm title="确定删除这篇草稿吗？" @confirm="handleDelete(article.id)">
+                <template #reference>
+                  <el-button type="danger" size="small">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </div>
         </template>
         <div class="article-summary">
-          {{ truncate(article.content, 150) }}
+          {{ truncate(article.content, 100) }}
         </div>
         <div class="article-meta">
           <span class="meta-item">
             <el-icon><Calendar /></el-icon>
             {{ formatDate(article.created_at) }}
           </span>
-          <span class="meta-item">
-            <el-icon><View /></el-icon>
-            {{ article.views }} 阅读
-          </span>
+          <el-tag size="small" type="info">草稿</el-tag>
         </div>
       </el-card>
       
@@ -55,7 +43,7 @@
             :total="total"
             :page-size="pageSize"
             v-model:current-page="currentPage"
-            @current-change="fetchArticles"
+            @current-change="fetchDrafts"
           />
       </div>
     </div>
@@ -64,37 +52,58 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getArticles } from '@/api/article'
-import { Calendar, View, Search } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { getArticles, updateArticle, deleteArticle } from '@/api/article'
+import { Calendar } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
+const router = useRouter()
 const articles = ref([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const searchKeyword = ref('')
 
-const handleSearch = () => {
-  currentPage.value = 1
-  fetchArticles(1)
-}
-
-const fetchArticles = async (page = 1) => {
+const fetchDrafts = async (page = 1) => {
   loading.value = true
   try {
-    const params = { page }
-    if (searchKeyword.value && searchKeyword.value.trim()) {
-      params.title = searchKeyword.value.trim()
-    }
+    // 注意：这里依赖后端支持 status=draft 参数
+    const params = { page, status: 'draft' }
     const res = await getArticles(params)
-    // res: { count, next, previous, results }
     articles.value = res.results
     total.value = res.count
     currentPage.value = page
   } catch (error) {
     console.error(error)
+    ElMessage.error('获取草稿列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const handleEdit = (id) => {
+  router.push(`/articles/${id}/edit`)
+}
+
+const handlePublish = async (article) => {
+  try {
+    await updateArticle(article.id, { status: 'published' })
+    ElMessage.success('发布成功')
+    fetchDrafts(currentPage.value)
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('发布失败')
+  }
+}
+
+const handleDelete = async (id) => {
+  try {
+    await deleteArticle(id)
+    ElMessage.success('删除成功')
+    fetchDrafts(currentPage.value)
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('删除失败')
   }
 }
 
@@ -109,20 +118,15 @@ const formatDate = (dateStr) => {
 }
 
 onMounted(() => {
-  fetchArticles()
+  fetchDrafts()
 })
 </script>
 
 <style scoped>
-.home-container {
+.drafts-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px 0;
-}
-
-.search-bar {
-  margin-bottom: 20px;
-  max-width: 400px;
 }
 
 .article-card {
@@ -139,11 +143,6 @@ onMounted(() => {
   font-size: 18px;
   font-weight: bold;
   color: #303133;
-  text-decoration: none;
-}
-
-.article-title:hover {
-  color: #409EFF;
 }
 
 .article-summary {
@@ -157,6 +156,7 @@ onMounted(() => {
   gap: 20px;
   color: #909399;
   font-size: 14px;
+  align-items: center;
 }
 
 .meta-item {

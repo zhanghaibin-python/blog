@@ -27,6 +27,14 @@ export function createArticle(data) {
   })
 }
 
+// 删除文章
+export function deleteArticle(id) {
+  return request({
+    url: `/articles/${id}/`,
+    method: 'delete'
+  })
+}
+
 // 更新文章
 export function updateArticle(id, data) {
   return request({
