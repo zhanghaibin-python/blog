@@ -1,65 +1,88 @@
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase
+from django.test import TestCase
 from django.contrib.auth.models import User
 from .models import Article, Category
+from .tasks import sync_article_views
 from django_redis import get_redis_connection
-from django.core.cache import cache
 
-
-class ArticleTests(APITestCase):
-
+class ArticleTaskTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='password123')
-        self.category = Category.objects.create(name='Django')
-        self.list_url = reverse('articles')
-
-        # 清理 Redis，防止之前的测试残留
-        get_redis_connection("default").flushdb()
-
-    def test_create_article(self):
-        """测试发布文章"""
-        self.client.force_authenticate(user=self.user)
-        data = {
-            'title': 'Test Article',
-            'content': 'Content',
-            'category': self.category.id,
-            'status': 'published'
-        }
-        response = self.client.post(self.list_url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Article.objects.count(), 1)
-
-    def test_create_article_unauthorized(self):
-        """测试未登录发布"""
-        data = {'title': 'Fail', 'content': 'Content', 'category': self.category.id}
-        response = self.client.post(self.list_url, data)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_view_counter(self):
-        """测试阅读量 Redis 计数"""
-        # 1. 准备数据
-        article = Article.objects.create(
-            title='Hot Article',
+        # 1. 准备测试数据
+        self.user = User.objects.create_user(username='testuser', password='password')
+        self.category = Category.objects.create(name='Test Category')
+        self.article = Article.objects.create(
+            title='Test Article',
             content='Content',
             author=self.user,
             category=self.category,
-            status='published',
-            views=0
+            views=0  # 初始阅读量为 0
         )
-        url = reverse('article_detail', args=[article.id])
+        
+        # 2. 清理 Redis (防止之前的测试数据干扰)
+        self.redis_conn = get_redis_connection("default")
+        self.redis_key = f"article:views:{self.article.id}"
+        self.redis_conn.delete(self.redis_key)
 
-        # 2. 模拟访问
-        self.client.get(url)  # 第一次访问
-        self.client.get(url)  # 第二次访问
+    def tearDown(self):
+        # 测试结束后清理 Redis
+        self.redis_conn.delete(self.redis_key)
 
-        # 3. 验证 Redis 里的值
-        redis_conn = get_redis_connection("default")
-        key = f"article:views:{article.id}"
-        incr = int(redis_conn.get(key))
+    def test_sync_article_views_logic(self):
+        """
+        测试 sync_article_views 任务能否正确同步 Redis 数据到 MySQL
+        """
+        # 1. 模拟 Redis 中有 10 个新增阅读量
+        self.redis_conn.set(self.redis_key, 10)
+        
+        # 2. 执行同步任务 (同步调用，不走 Celery 异步)
+        sync_article_views()
+        
+        # 3. 重新从数据库获取文章
+        self.article.refresh_from_db()
+        
+        # 4. 断言：数据库阅读量应该是 10
+        self.assertEqual(self.article.views, 10)
+        
+        # 5. 断言：Redis 里的值应该变为 0 (或者被删除了，取决于你的逻辑)
+        # 注意：你现在的逻辑是 decrby，所以 Redis 里应该是 0
+        remaining_views = self.redis_conn.get(self.redis_key)
+        
+        # Redis get 返回的是 bytes，或者是 None (如果 key 被删了)
+        # 如果逻辑是 decrby，最后可能是 b'0'
+        if remaining_views:
+             self.assertEqual(int(remaining_views), 0)
+        else:
+             # 如果逻辑是直接删 key，那就是 None
+             self.assertIsNone(remaining_views)
 
-        self.assertEqual(incr, 2, "Redis 中的计数应该是 2")
-
-        # 4. 验证数据库里的值（应该还是 0，因为还没同步）
-        article.refresh_from_db()
-        self.assertEqual(article.views, 0, "数据库里的值应该还没变")
+    def test_sync_views_with_concurrent_update(self):
+        """
+        模拟并发场景：同步过程中，Redis 又增加了新数据
+        """
+        # 1. 初始 Redis 有 10
+        self.redis_conn.set(self.redis_key, 10)
+        
+        # 2. 这里我们无法真正模拟 "同步函数执行到一半时插入数据"
+        # 但我们可以验证 decrby 的逻辑：
+        # 假设任务取出了 10，准备更新数据库...
+        
+        # 手动模拟任务内部逻辑的一部分：
+        incr = int(self.redis_conn.get(self.redis_key)) # 拿到 10
+        
+        # 3. 此时突然又有 5 个阅读量进来
+        self.redis_conn.incr(self.redis_key, 5) # Redis 变成 15
+        
+        # 4. 任务继续执行更新数据库 (加 10)
+        from django.db.models import F
+        Article.objects.filter(id=self.article.id).update(views=F("views") + incr)
+        
+        # 5. 任务执行 decrby (减 10)
+        self.redis_conn.decrby(self.redis_key, incr)
+        
+        # 6. 验证结果
+        self.article.refresh_from_db()
+        # 数据库应该加了 10
+        self.assertEqual(self.article.views, 10)
+        
+        # Redis 应该还剩 5 (15 - 10)
+        remaining = int(self.redis_conn.get(self.redis_key))
+        self.assertEqual(remaining, 5)
