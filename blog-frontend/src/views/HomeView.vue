@@ -9,6 +9,12 @@
         clearable
         @clear="handleSearch"
       >
+        <template #prepend>
+            <el-select v-model="selectedCategory" placeholder="全部分类" style="width: 110px" clearable @change="handleSearch">
+                <el-option label="全部分类" value="" />
+                <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
+            </el-select>
+        </template>
         <template #append>
           <el-button :icon="Search" @click="handleSearch" />
         </template>
@@ -65,18 +71,30 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getArticles } from '@/api/article'
+import { getCategories } from '@/api/category'
 import { Calendar, View, Search } from '@element-plus/icons-vue'
 
 const articles = ref([])
+const categories = ref([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
 const searchKeyword = ref('')
+const selectedCategory = ref('')
 
 const handleSearch = () => {
   currentPage.value = 1
   fetchArticles(1)
+}
+
+const fetchCategoryList = async () => {
+  try {
+    const res = await getCategories()
+    categories.value = res
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const fetchArticles = async (page = 1) => {
@@ -85,6 +103,9 @@ const fetchArticles = async (page = 1) => {
     const params = { page }
     if (searchKeyword.value && searchKeyword.value.trim()) {
       params.title = searchKeyword.value.trim()
+    }
+    if (selectedCategory.value) {
+        params.category = selectedCategory.value
     }
     const res = await getArticles(params)
     // res: { count, next, previous, results }
@@ -109,6 +130,7 @@ const formatDate = (dateStr) => {
 }
 
 onMounted(() => {
+  fetchCategoryList()
   fetchArticles()
 })
 </script>
@@ -122,7 +144,7 @@ onMounted(() => {
 
 .search-bar {
   margin-bottom: 20px;
-  max-width: 400px;
+  max-width: 600px;
 }
 
 .article-card {

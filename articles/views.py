@@ -1,5 +1,5 @@
 from .serializers import CategorySerializer, ArticleReadSerializer, ArticleWriteSerializer
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .models import Article, Category
 from .permissions import IsAuthorOrReadOnly
 from rest_framework.pagination import PageNumberPagination
