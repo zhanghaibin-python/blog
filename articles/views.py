@@ -10,6 +10,8 @@ from django_redis import get_redis_connection
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from .filters import ArticleFilter
+from utils.decorators import timer
+from django.utils.decorators import method_decorator
 # Create your views here.
 
 
@@ -21,7 +23,7 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
-
+@method_decorator(timer, name='list')
 class ArticleListCreateAPIView(ListCreateAPIView):
      """
      继承 ListCreateAPIView 自动处理
