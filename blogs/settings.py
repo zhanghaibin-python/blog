@@ -158,7 +158,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'utils.exceptions.custom_exception_handler',
     # 配置过滤器
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend', ),
-    # 1. 启用先流类
+    # 1. 启用限流类
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',   # 匿名用户速率限制
         'rest_framework.throttling.UserRateThrottle',   # 认证用户速率限制
@@ -168,6 +168,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '20/min',  # 匿名用户每分钟最多20次请求 (防止爬虫)
         'user': '100/min',  # 登录用户每分钟最多100次请求 (防止滥用)
+        'login': '5/min',  # 登录接口每分钟最多5次请求 (防止暴力破解)
     }
 }
 

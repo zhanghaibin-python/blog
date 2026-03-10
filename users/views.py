@@ -27,6 +27,10 @@ class LoginAPIView(APIView):
     """
     登录视图API
     """
+    # 配置限流分类 login
+    throttle_classes = [ScopeRateThrottle]
+    throttle_scope = 'login'
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
